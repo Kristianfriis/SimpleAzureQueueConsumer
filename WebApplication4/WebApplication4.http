@@ -1,0 +1,11 @@
+@WebApplication4_HostAddress = http://localhost:5241
+
+POST {{WebApplication4_HostAddress}}/api/CreateUser
+Accept: application/json
+
+{
+  "email": "rebus@code-maze.com",
+  "password": "AVerySecurePassword"
+}
+
+###
