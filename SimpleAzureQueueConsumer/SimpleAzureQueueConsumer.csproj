@@ -7,6 +7,13 @@
         <PackageId>SimpleAzureQueueConsumer</PackageId>
         <Version>0.3.0</Version>
         <Authors>Kristian Friis</Authors>
+        <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+        <Title>SimpleAzureQueueConsumer</Title>
+        <PackageVersion>0.3.0</PackageVersion>
+        <PackageProjectUrl>https://github.com/Kristianfriis/SimpleAzureQueueConsumer/</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Kristianfriis/SimpleAzureQueueConsumer</RepositoryUrl>
+        <PackageReadmeFile>Readme.md</PackageReadmeFile>
+        <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -18,4 +25,8 @@
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Include="../Readme.md" Pack="true" PackagePath="\" />
+        <None Include="../LICENSE.txt" Pack="true" PackagePath="\" />
+    </ItemGroup>
 </Project>
