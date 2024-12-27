@@ -17,7 +17,7 @@ builder.AddSaqcHandler<UserCreatedMessageHandler>("user-created");
 
 builder.AddSaqcHandler<OrderCreatedMessageHandler>()
     .OnQueue("order-created")
-    .SetPollingRate(1000)
+    .WithPollingInterval(1000)
     .Register();
 
 // builder.AddSaqcHandler<OrderCreatedMessageHandler>("order-created");

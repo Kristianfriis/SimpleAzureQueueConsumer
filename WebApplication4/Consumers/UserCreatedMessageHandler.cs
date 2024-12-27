@@ -12,9 +12,9 @@ public class UserCreatedMessageHandler : IQueueMessageHandler
         _azureStorageQueueSender = azureStorageQueueSender;
     }
 
-    public async Task HandleMessageAsync(string message)
+    public async Task HandleMessageAsync(StorageQueueMessage message)
     {
-        var user = JsonSerializer.Deserialize<User>(message);
+        var user = JsonSerializer.Deserialize<User>(message.MessageText!);
         Console.WriteLine($"User created message received: user id: {user?.Email}");
         // ... your order processing logic ...
         await _azureStorageQueueSender.Send(new Order(){UserId = user.Id}, "order-created");

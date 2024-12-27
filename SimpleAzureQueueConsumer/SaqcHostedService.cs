@@ -47,6 +47,14 @@ internal class SaqcHostedService : BackgroundService
                 }
             }
         }
+        catch (TaskCanceledException)
+        {
+            // Ignore
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore
+        }
         catch (Exception e)
         {
             Console.WriteLine(e);
@@ -56,7 +64,7 @@ internal class SaqcHostedService : BackgroundService
 
     private async Task HandleTimerAsync(QueueConfiguration queueConfiguration, CancellationToken stoppingToken)
     {
-        var queueClient = await SaqcBase.GetOrCreateQueueClient(queueConfiguration.QueueName ?? throw new InvalidOperationException("Queue name not set"));
+        var queueClient = await SaqcBase.GetOrCreateQueueClient(queueConfiguration.GetQueueName());
         
         try
         {
@@ -79,7 +87,9 @@ internal class SaqcHostedService : BackgroundService
                             throw new InvalidOperationException($"No handler found for queue: {queueConfiguration.QueueName}");
                         }
                         
-                        await scopedHandler.HandleMessageAsync(message.MessageText); 
+                        var storageQueueMessage = new StorageQueueMessage(message);
+                        
+                        await scopedHandler.HandleMessageAsync(storageQueueMessage); 
                     }
                     
                     await queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt, stoppingToken);
@@ -87,6 +97,10 @@ internal class SaqcHostedService : BackgroundService
             }
         }
         catch (TaskCanceledException)
+        {
+            // Ignore
+        }
+        catch (OperationCanceledException)
         {
             // Ignore
         }
@@ -102,15 +116,14 @@ internal class SaqcHostedService : BackgroundService
         Console.WriteLine($"Creating queue clients for {SaqcBase.GetQueueConfigurations().Count()} queues");
         foreach (var queueConfiguration in SaqcBase.GetQueueConfigurations())
         {
-            await SaqcBase.GetOrCreateQueueClient(queueConfiguration.QueueName ?? throw new InvalidOperationException("Queue name not set"));
+            await SaqcBase.GetOrCreateQueueClient(queueConfiguration.GetQueueName());
             Console.WriteLine($"Queue client created for queue: {queueConfiguration.QueueName}");
         }
     }
 
     private async Task HandleError(QueueConfiguration queueConfiguration, string messageBody, CancellationToken stoppingToken)
     {
-        var errorQueueName = $"{queueConfiguration}-error";
-        var errorQueueClient = await SaqcBase.GetOrCreateQueueClient(errorQueueName);;
+        var errorQueueClient = await SaqcBase.GetOrCreateQueueClient(queueConfiguration.GetErrorQueueName());
         var errorQueueExist = await errorQueueClient.ExistsAsync(stoppingToken);
                         
         if (!errorQueueExist)
@@ -119,5 +132,23 @@ internal class SaqcHostedService : BackgroundService
         }
                         
         await errorQueueClient.SendMessageAsync(messageBody, stoppingToken);
+    }
+    
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            Console.WriteLine("SaqcHostedService stopping gracefully.");
+            await base.StopAsync(cancellationToken); 
+        }
+        catch (OperationCanceledException)
+        {
+            // Suppress the cancellation exception as it's expected during shutdown
+            Console.WriteLine("SaqcHostedService: OperationCanceledException during StopAsync.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("SaqcHostedService: An error occurred during shutdown.");
+        }
     }
 }

@@ -45,7 +45,7 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
     /// </summary>
     /// <param name="pollingRateMs">The polling rate in milliseconds.</param>
     /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
-    public SaqcHandlerConfiguration<THandler> SetPollingRate(int pollingRateMs)
+    public SaqcHandlerConfiguration<THandler> WithPollingInterval(int pollingRateMs)
     {
         if(_queueConfiguration is null)
         {
@@ -62,7 +62,7 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
     /// </summary>
     /// <param name="timeSpan">The polling rate in a TimeSpan.</param>
     /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
-    public SaqcHandlerConfiguration<THandler> SetPollingRate(TimeSpan timeSpan)
+    public SaqcHandlerConfiguration<THandler> WithPollingInterval(TimeSpan timeSpan)
     {
         if(_queueConfiguration is null)
         {
@@ -79,7 +79,7 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
     /// </summary>
     /// <param name="errorQueueName">The error queue name appended to full queue name. Deafult is "error"</param>
     /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
-    public SaqcHandlerConfiguration<THandler> SetErrorQueueName(string errorQueueName)
+    public SaqcHandlerConfiguration<THandler> WithErrorQueueName(string errorQueueName)
     {
         if(_queueConfiguration is null)
         {
