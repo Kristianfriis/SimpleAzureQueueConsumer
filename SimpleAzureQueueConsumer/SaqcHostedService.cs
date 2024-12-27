@@ -57,13 +57,6 @@ internal class SaqcHostedService : BackgroundService
     private async Task HandleTimerAsync(QueueConfiguration queueConfiguration, CancellationToken stoppingToken)
     {
         var queueClient = await SaqcBase.GetOrCreateQueueClient(queueConfiguration.QueueName);
-                
-        var handler = _serviceProvider.GetKeyedService<IQueueMessageHandler>(queueConfiguration.QueueName);
-        
-        if(handler is null)
-        {
-            throw new InvalidOperationException($"No handler found for queue: {queueConfiguration.QueueName}");
-        }
         
         try
         {
@@ -77,7 +70,18 @@ internal class SaqcHostedService : BackgroundService
                 }
                 else
                 {
-                    await handler.HandleMessageAsync(message.MessageText);
+                    using (var scope = _serviceProvider.CreateScope()) 
+                    {
+                        var scopedHandler = scope.ServiceProvider.GetRequiredKeyedService<IQueueMessageHandler>(queueConfiguration.QueueName); 
+                        
+                        if(scopedHandler is null)
+                        {
+                            throw new InvalidOperationException($"No handler found for queue: {queueConfiguration.QueueName}");
+                        }
+                        
+                        await scopedHandler.HandleMessageAsync(message.MessageText); 
+                    }
+                    
                     await queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt, stoppingToken);
                 }
             }
