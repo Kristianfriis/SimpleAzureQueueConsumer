@@ -11,7 +11,8 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
 {
     private readonly WebApplicationBuilder _builder;
     private readonly int _pollingRateMs = 5000;
-    private QueueConfiguration _queueConfiguration { get; set; }
+    // ReSharper disable once InconsistentNaming
+    private QueueConfiguration? _queueConfiguration { get; set; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SaqcHandlerConfiguration{THandler}"/> class.
@@ -20,7 +21,6 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
     public SaqcHandlerConfiguration(WebApplicationBuilder builder)
     {
         _builder = builder;
-        _queueConfiguration = new QueueConfiguration();
     }
 
     /// <summary>
@@ -30,6 +30,10 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
     /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
     public SaqcHandlerConfiguration<THandler> OnQueue(string queueName)
     {
+        _queueConfiguration = new QueueConfiguration()
+        {
+            QueueName = queueName
+        };
         _queueConfiguration.QueueName = queueName;
         _queueConfiguration.PollingRateMs = _pollingRateMs;
 
@@ -43,6 +47,11 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
     /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
     public SaqcHandlerConfiguration<THandler> SetPollingRate(int pollingRateMs)
     {
+        if(_queueConfiguration is null)
+        {
+            throw new InvalidOperationException("Queue name not set. Call OnQueue() first.");
+        }
+        
         _queueConfiguration.PollingRateMs = pollingRateMs;
 
         return this;
@@ -55,16 +64,44 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
     /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
     public SaqcHandlerConfiguration<THandler> SetPollingRate(TimeSpan timeSpan)
     {
+        if(_queueConfiguration is null)
+        {
+            throw new InvalidOperationException("Queue name not set. Call OnQueue() first.");
+        }
+        
         _queueConfiguration.PollingRateMs = (int)timeSpan.TotalMilliseconds;
 
         return this;
     }
-
+    
     /// <summary>
-    /// Registers the queue message handler and its configuration.
+    /// Sets the error queue name for the queue.
+    /// </summary>
+    /// <param name="errorQueueName">The error queue name appended to full queue name. Deafult is "error"</param>
+    /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
+    public SaqcHandlerConfiguration<THandler> SetErrorQueueName(string errorQueueName)
+    {
+        if(_queueConfiguration is null)
+        {
+            throw new InvalidOperationException("Queue name not set. Call OnQueue() first.");
+        }
+        
+        _queueConfiguration.ErrorQueueName = errorQueueName;
+
+        return this;
+    }
+    
+    /// <summary>
+    /// Registers the queue message handler and its configuration. <br />
+    /// If this method is not called, the handler will not be registered.
     /// </summary>
     public void Register()
     {
+        if(_queueConfiguration is null)
+        {
+            throw new InvalidOperationException("Queue name not set. Call OnQueue() first.");
+        }
+        
         _builder.Services.AddKeyedScoped<IQueueMessageHandler, THandler>(_queueConfiguration.QueueName);
         SaqcBase.AddQueueConfig(_queueConfiguration);
     }

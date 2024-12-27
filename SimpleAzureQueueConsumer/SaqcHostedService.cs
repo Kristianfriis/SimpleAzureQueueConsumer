@@ -86,6 +86,10 @@ internal class SaqcHostedService : BackgroundService
                 }
             }
         }
+        catch (TaskCanceledException)
+        {
+            // Ignore
+        }
         catch (Exception ex)
         {
             Console.WriteLine(ex);
