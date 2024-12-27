@@ -56,7 +56,7 @@ internal class SaqcHostedService : BackgroundService
 
     private async Task HandleTimerAsync(QueueConfiguration queueConfiguration, CancellationToken stoppingToken)
     {
-        var queueClient = await SaqcBase.GetOrCreateQueueClient(queueConfiguration.QueueName);
+        var queueClient = await SaqcBase.GetOrCreateQueueClient(queueConfiguration.QueueName ?? throw new InvalidOperationException("Queue name not set"));
         
         try
         {
@@ -102,7 +102,7 @@ internal class SaqcHostedService : BackgroundService
         Console.WriteLine($"Creating queue clients for {SaqcBase.GetQueueConfigurations().Count()} queues");
         foreach (var queueConfiguration in SaqcBase.GetQueueConfigurations())
         {
-            await SaqcBase.GetOrCreateQueueClient(queueConfiguration.QueueName);
+            await SaqcBase.GetOrCreateQueueClient(queueConfiguration.QueueName ?? throw new InvalidOperationException("Queue name not set"));
             Console.WriteLine($"Queue client created for queue: {queueConfiguration.QueueName}");
         }
     }

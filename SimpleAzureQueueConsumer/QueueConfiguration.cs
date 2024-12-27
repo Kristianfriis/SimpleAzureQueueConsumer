@@ -2,7 +2,7 @@ namespace SimpleAzureQueueConsumer;
 
 internal class QueueConfiguration
 {
-    internal required string QueueName { get; set; }
+    internal string? QueueName { get; set; }
 
     /// <summary>
     /// Setting the polling rate in milliseconds.<br />
