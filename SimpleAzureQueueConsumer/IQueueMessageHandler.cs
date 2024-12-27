@@ -8,5 +8,5 @@ public interface IQueueMessageHandler
     /// </summary>
     /// <param name="message"></param>
     /// <returns></returns>
-    Task HandleMessageAsync(string message);
+    Task HandleMessageAsync(StorageQueueMessage message);
 }

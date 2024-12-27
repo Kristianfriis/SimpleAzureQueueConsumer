@@ -47,6 +47,14 @@ internal class SaqcHostedService : BackgroundService
                 }
             }
         }
+        catch (TaskCanceledException)
+        {
+            // Ignore
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore
+        }
         catch (Exception e)
         {
             Console.WriteLine(e);
@@ -56,14 +64,7 @@ internal class SaqcHostedService : BackgroundService
 
     private async Task HandleTimerAsync(QueueConfiguration queueConfiguration, CancellationToken stoppingToken)
     {
-        var queueClient = await SaqcBase.GetOrCreateQueueClient(queueConfiguration.QueueName);
-                
-        var handler = _serviceProvider.GetKeyedService<IQueueMessageHandler>(queueConfiguration.QueueName);
-        
-        if(handler is null)
-        {
-            throw new InvalidOperationException($"No handler found for queue: {queueConfiguration.QueueName}");
-        }
+        var queueClient = await SaqcBase.GetOrCreateQueueClient(queueConfiguration.GetQueueName());
         
         try
         {
@@ -77,10 +78,31 @@ internal class SaqcHostedService : BackgroundService
                 }
                 else
                 {
-                    await handler.HandleMessageAsync(message.MessageText);
+                    using (var scope = _serviceProvider.CreateScope()) 
+                    {
+                        var scopedHandler = scope.ServiceProvider.GetRequiredKeyedService<IQueueMessageHandler>(queueConfiguration.QueueName); 
+                        
+                        if(scopedHandler is null)
+                        {
+                            throw new InvalidOperationException($"No handler found for queue: {queueConfiguration.QueueName}");
+                        }
+                        
+                        var storageQueueMessage = new StorageQueueMessage(message);
+                        
+                        await scopedHandler.HandleMessageAsync(storageQueueMessage); 
+                    }
+                    
                     await queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt, stoppingToken);
                 }
             }
+        }
+        catch (TaskCanceledException)
+        {
+            // Ignore
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore
         }
         catch (Exception ex)
         {
@@ -94,15 +116,14 @@ internal class SaqcHostedService : BackgroundService
         Console.WriteLine($"Creating queue clients for {SaqcBase.GetQueueConfigurations().Count()} queues");
         foreach (var queueConfiguration in SaqcBase.GetQueueConfigurations())
         {
-            await SaqcBase.GetOrCreateQueueClient(queueConfiguration.QueueName);
+            await SaqcBase.GetOrCreateQueueClient(queueConfiguration.GetQueueName());
             Console.WriteLine($"Queue client created for queue: {queueConfiguration.QueueName}");
         }
     }
 
     private async Task HandleError(QueueConfiguration queueConfiguration, string messageBody, CancellationToken stoppingToken)
     {
-        var errorQueueName = $"{queueConfiguration}-error";
-        var errorQueueClient = await SaqcBase.GetOrCreateQueueClient(errorQueueName);;
+        var errorQueueClient = await SaqcBase.GetOrCreateQueueClient(queueConfiguration.GetErrorQueueName());
         var errorQueueExist = await errorQueueClient.ExistsAsync(stoppingToken);
                         
         if (!errorQueueExist)
@@ -111,5 +132,23 @@ internal class SaqcHostedService : BackgroundService
         }
                         
         await errorQueueClient.SendMessageAsync(messageBody, stoppingToken);
+    }
+    
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            Console.WriteLine("SaqcHostedService stopping gracefully.");
+            await base.StopAsync(cancellationToken); 
+        }
+        catch (OperationCanceledException)
+        {
+            // Suppress the cancellation exception as it's expected during shutdown
+            Console.WriteLine("SaqcHostedService: OperationCanceledException during StopAsync.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("SaqcHostedService: An error occurred during shutdown.");
+        }
     }
 }

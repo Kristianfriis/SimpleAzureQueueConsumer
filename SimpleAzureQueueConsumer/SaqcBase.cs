@@ -9,18 +9,23 @@ internal static class SaqcBase
     private static List<QueueConfiguration> QueueConfigs { get; } = new();
     private static readonly ConcurrentDictionary<string, QueueClient> QueueClients = new();
 
-    public static void SetConnectionString(string connectionString)
+    internal static void SetConnectionString(string connectionString)
     {
         ConnectString = connectionString;
     }
 
-    public static string GetConnectionString()
+    private static string GetConnectionString()
     {
         return ConnectString ?? throw new InvalidOperationException("Connection string not set");
     }
 
-    public static void AddQueueName(string queueName, int pollingRateMs)
+    internal static void AddQueueName(string queueName, int pollingRateMs)
     {
+        if(QueueConfigs.Any(qc => qc.QueueName == queueName))
+        {
+            throw new InvalidOperationException($"Queue with name {queueName} already configured.");
+        }
+        
         var queueConfig = new QueueConfiguration
         {
             QueueName = queueName,
@@ -29,12 +34,22 @@ internal static class SaqcBase
         QueueConfigs.Add(queueConfig);
     }
 
+    internal static void AddQueueConfig(QueueConfiguration queueConfiguration)
+    {
+        if(QueueConfigs.Any(qc => qc.QueueName == queueConfiguration.QueueName))
+        {
+            throw new InvalidOperationException($"Queue with name {queueConfiguration.QueueName} already configured.");
+        }
+        
+        QueueConfigs.Add(queueConfiguration);
+    }
+
     public static List<QueueConfiguration> GetQueueConfigurations()
     {
         return QueueConfigs;
     }
 
-    public static void ClearQueueNames()
+    internal static void ClearQueueNames()
     {
         QueueConfigs.Clear();
     }
@@ -46,7 +61,7 @@ internal static class SaqcBase
             return queueClient;
         }
 
-        queueClient = new QueueClient(SaqcBase.GetConnectionString(), queueName);
+        queueClient = new QueueClient(GetConnectionString(), queueName);
         await queueClient.CreateIfNotExistsAsync();
         QueueClients.TryAdd(queueName, queueClient);
         return queueClient;

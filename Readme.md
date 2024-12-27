@@ -15,7 +15,6 @@ This package is designed for developers building message-driven systems using Az
 
 ## Features
 - Keyed service registration for different queues.
-- Supports `Singleton`, `Scoped`, and `Transient` handler lifecycles.
 - Built-in polling mechanism with configurable intervals.
 - Easy integration with .NET's dependency injection (DI).
 - Lightweight and customizable.
@@ -28,7 +27,7 @@ This package is designed for developers building message-driven systems using Az
 You can install the package using the .NET CLI:
 
 ```bash
-dotnet add package Contoso.AzureQueueHandler
+dotnet add package SimpleAzureQueueConsumer
 ```
 ```bash
 <PackageReference Include="SimpleAzureQueueConsumer" Version="1.0.0" />
@@ -44,9 +43,16 @@ var services = builder.Services;
 // Add base configuration
 services.AddSaqcBase("YourAzureStorageConnectionString");
 
-// Register handlers
-builder.Services.AddSaqcHandlerSingleton<OrderCreatedMessageHandler>("order-created");
-builder.Services.AddSaqcHandlerSingleton<UserCreatedMessageHandler>("user-created");
+// Register handlers using the fluent API
+builder.Services.AddSaqcHandler<OrderCreatedMessageHandler>()
+    .OnQueue("order-created")
+    .SetPollingRate(5000)
+    .Register();
+
+builder.Services.AddSaqcHandler<UserCreatedMessageHandler>()
+    .OnQueue("user-created")
+    .SetPollingRate(5000)
+    .Register();
 
 var app = builder.Build();
 app.Run();
