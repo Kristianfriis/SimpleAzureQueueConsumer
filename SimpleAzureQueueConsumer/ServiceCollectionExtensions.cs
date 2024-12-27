@@ -58,4 +58,15 @@ public static class ServiceCollectionExtensions
         SaqcBase.AddQueueName(queueName, pollingRateMs);
         builder.Services.AddKeyedScoped<IQueueMessageHandler, THandler>(queueName);
     }
+    
+    /// <summary>
+    /// Adds a scoped SAQC handler to the service collection.
+    /// </summary>
+    /// <typeparam name="THandler">The type of the handler to add.</typeparam>
+    /// <param name="builder">The WebApplicationBuilder to add the handler to.</param>
+    public static SaqcHandlerConfiguration<THandler> AddSaqcHandler<THandler>(this WebApplicationBuilder builder)
+        where THandler : class, IQueueMessageHandler
+    {
+        return new SaqcHandlerConfiguration<THandler>(builder);
+    }
 }

@@ -5,11 +5,18 @@ namespace WebApplication4.Consumers;
 
 public class UserCreatedMessageHandler : IQueueMessageHandler
 {
-    public Task HandleMessageAsync(string message)
+    private readonly IAzureStorageQueueSender _azureStorageQueueSender;
+
+    public UserCreatedMessageHandler(IAzureStorageQueueSender azureStorageQueueSender)
+    {
+        _azureStorageQueueSender = azureStorageQueueSender;
+    }
+
+    public async Task HandleMessageAsync(string message)
     {
         var user = JsonSerializer.Deserialize<User>(message);
         Console.WriteLine($"User created message received: user id: {user?.Email}");
         // ... your order processing logic ...
-        return Task.CompletedTask;
+        await _azureStorageQueueSender.Send(new Order(){UserId = user.Id}, "order-created");
     }
 }

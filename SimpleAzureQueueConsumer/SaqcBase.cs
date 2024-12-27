@@ -21,12 +21,27 @@ internal static class SaqcBase
 
     public static void AddQueueName(string queueName, int pollingRateMs)
     {
+        if(QueueConfigs.Any(qc => qc.QueueName == queueName))
+        {
+            throw new InvalidOperationException($"Queue with name {queueName} already configured.");
+        }
+        
         var queueConfig = new QueueConfiguration
         {
             QueueName = queueName,
             PollingRateMs = pollingRateMs,
         };
         QueueConfigs.Add(queueConfig);
+    }
+
+    internal static void AddQueueConfig(QueueConfiguration queueConfiguration)
+    {
+        if(QueueConfigs.Any(qc => qc.QueueName == queueConfiguration.QueueName))
+        {
+            throw new InvalidOperationException($"Queue with name {queueConfiguration.QueueName} already configured.");
+        }
+        
+        QueueConfigs.Add(queueConfiguration);
     }
 
     public static List<QueueConfiguration> GetQueueConfigurations()
