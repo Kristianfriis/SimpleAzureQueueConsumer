@@ -109,7 +109,13 @@ internal class SaqcHostedService : BackgroundService
         catch (Exception ex)
         {
             Console.WriteLine(ex);
-            await HandleError(queueConfiguration, message, stoppingToken);
+            if (message is not null)
+            {
+                if (message.DequeueCount < queueConfiguration.DequeueCount)
+                    return;
+                
+                await HandleError(queueConfiguration, message, stoppingToken);
+            }
         }
     }
 
@@ -126,9 +132,6 @@ internal class SaqcHostedService : BackgroundService
     private async Task HandleError(QueueConfiguration queueConfiguration, QueueMessage? message, CancellationToken stoppingToken)
     {
         if(message is null)
-            return;
-        
-        if (message.DequeueCount < queueConfiguration.DequeueCount)
             return;
             
         var errorQueueClient = await SaqcBase.GetOrCreateQueueClient(queueConfiguration.GetErrorQueueName());
