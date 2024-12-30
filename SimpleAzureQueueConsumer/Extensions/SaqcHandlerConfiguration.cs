@@ -12,7 +12,6 @@ namespace SimpleAzureQueueConsumer.Extensions;
 public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMessageHandler
 {
     private readonly WebApplicationBuilder _builder;
-    private readonly int _pollingRateMs = 5000;
     // ReSharper disable once InconsistentNaming
     private QueueConfiguration? _queueConfiguration { get; set; }
 
@@ -26,7 +25,8 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
     }
 
     /// <summary>
-    /// Sets the queue name for the handler.
+    /// Sets the queue name for the handler. <br />
+    /// This is a required method to call, and should be called before configuring anything else.
     /// </summary>
     /// <param name="queueName">The name of the queue.</param>
     /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
@@ -37,13 +37,14 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
             QueueName = queueName
         };
         _queueConfiguration.QueueName = queueName;
-        _queueConfiguration.PollingRateMs = _pollingRateMs;
 
         return this;
     }
 
     /// <summary>
-    /// Sets the polling rate for the queue.
+    /// Sets the polling rate for the queue. <br />
+    ///
+    /// Default is 5000 ms.
     /// </summary>
     /// <param name="pollingRateMs">The polling rate in milliseconds.</param>
     /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
@@ -55,6 +56,25 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
         }
         
         _queueConfiguration.PollingRateMs = pollingRateMs;
+
+        return this;
+    }
+    
+    /// <summary>
+    /// Sets the polling rate for the queue. <br />
+    ///
+    /// Default is 5 seconds.
+    /// </summary>
+    /// <param name="timeSpan">The polling rate in a TimeSpan.</param>
+    /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
+    public SaqcHandlerConfiguration<THandler> WithPollingInterval(TimeSpan timeSpan)
+    {
+        if(_queueConfiguration is null)
+        {
+            throw new InvalidOperationException("Queue name not set. Call OnQueue() first.");
+        }
+        
+        _queueConfiguration.PollingRateMs = (int)timeSpan.TotalMilliseconds;
 
         return this;
     }
@@ -77,23 +97,6 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
     }
     
     /// <summary>
-    /// Sets the polling rate for the queue.
-    /// </summary>
-    /// <param name="timeSpan">The polling rate in a TimeSpan.</param>
-    /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
-    public SaqcHandlerConfiguration<THandler> WithPollingInterval(TimeSpan timeSpan)
-    {
-        if(_queueConfiguration is null)
-        {
-            throw new InvalidOperationException("Queue name not set. Call OnQueue() first.");
-        }
-        
-        _queueConfiguration.PollingRateMs = (int)timeSpan.TotalMilliseconds;
-
-        return this;
-    }
-    
-    /// <summary>
     /// Sets the visibility timeout for a dequeued message.
     /// </summary>
     /// <param name="timeSpan">The visibility timeout in a TimeSpan.</param>
@@ -111,9 +114,13 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
     }
     
     /// <summary>
-    /// Sets the error queue name for the queue.
+    /// Sets the error queue name for the queue. <br />
+    ///
+    /// By default, the error queue name is the registered queue name with "-error" appended.<br />
+    /// For example, if the queue name is "my-queue", the error queue name will be "my-queue-error". <br />
+    /// With this you can configure a custom error queue name. It will be the full name of the error queue. <br />
     /// </summary>
-    /// <param name="errorQueueName">The error queue name appended to full queue name. Deafult is "error"</param>
+    /// <param name="errorQueueName">The error queue name to send the failed messages to. Default is "-error" to registered queue name</param>
     /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
     public SaqcHandlerConfiguration<THandler> WithErrorQueueName(string errorQueueName)
     {
@@ -123,6 +130,23 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
         }
         
         _queueConfiguration.ErrorQueueName = errorQueueName;
+
+        return this;
+    }
+    
+    /// <summary>
+    /// Configures the handler to use an error queue. <br />
+    /// By default, error queues are not used. <br />
+    /// </summary>
+    /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
+    public SaqcHandlerConfiguration<THandler> UseErrorQueue()
+    {
+        if(_queueConfiguration is null)
+        {
+            throw new InvalidOperationException("Queue name not set. Call OnQueue() first.");
+        }
+        
+        _queueConfiguration.UseErrorQueue = true;
 
         return this;
     }

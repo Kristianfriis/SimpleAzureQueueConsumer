@@ -21,8 +21,8 @@ internal class SaqcHostedService : BackgroundService
     {
         _serviceProvider = serviceProvider;
         _saqc = saqc;
-        _semaphore = new SemaphoreSlim(options.Value.NumberOfWorkers);
         _options = options.Value;
+        _semaphore = new SemaphoreSlim(_options.NumberOfWorkers);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -144,16 +144,19 @@ internal class SaqcHostedService : BackgroundService
     {
         if(message is null)
             return;
-            
-        var errorQueueClient = await _saqc.GetOrCreateQueueClient(queueConfiguration.GetErrorQueueName());
-        var errorQueueExist = await errorQueueClient.ExistsAsync(stoppingToken);
-                        
-        if (!errorQueueExist)
+        
+        if (queueConfiguration.UseErrorQueue is true)
         {
-            await errorQueueClient.CreateAsync(cancellationToken: stoppingToken);
-        }
+            var errorQueueClient = await _saqc.GetOrCreateQueueClient(queueConfiguration.GetErrorQueueName());
+            var errorQueueExist = await errorQueueClient.ExistsAsync(stoppingToken);
                         
-        await errorQueueClient.SendMessageAsync(message.MessageText, stoppingToken);
+            if (!errorQueueExist)
+            {
+                await errorQueueClient.CreateAsync(cancellationToken: stoppingToken);
+            }
+                        
+            await errorQueueClient.SendMessageAsync(message.MessageText, stoppingToken);
+        }
         
         if(queueClient is not null)
             //removing the original message from the queue

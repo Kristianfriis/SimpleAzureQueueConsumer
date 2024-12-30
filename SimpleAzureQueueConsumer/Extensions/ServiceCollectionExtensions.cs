@@ -9,7 +9,9 @@ public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Adds the base services required for the Simple Azure Queue Consumer (SAQC) to the service collection. <br />
-    /// Saqc uses a background service to poll Azure Storage Queues for messages and dispatches them to registered handlers.
+    /// Saqc uses a background service to poll Azure Storage Queues for messages and dispatches them to registered handlers.<br />
+    ///
+    /// This is the most basic way to configure the SAQC. You must provide the connection string for the Azure Storage account.
     /// </summary>
     /// <param name="builder">The WebApplicationBuilder to add the services to.</param>
     /// <param name="connectionString">The connection string for the Azure Storage account.</param>
@@ -23,6 +25,43 @@ public static class ServiceCollectionExtensions
         builder.Services.AddSingleton<ISaqc, Saqc>();
         builder.Services.AddSingleton<IAzureStorageQueueSender, AzureStorageQueueSender>();
         builder.Services.AddHostedService<SaqcHostedService>();
+    }
+    
+    /// <summary>
+    /// Adds the base services required for the Simple Azure Queue Consumer (SAQC) to the service collection. <br />
+    /// Saqc uses a background service to poll Azure Storage Queues for messages and dispatches them to registered handlers.
+    /// </summary>
+    /// <param name="builder">The WebApplicationBuilder to add the services to.</param>
+    /// <param name="configureOptions">The options to configure the general configurations</param>
+    public static WebApplicationBuilder AddSaqc(this WebApplicationBuilder builder, Action<SaqcOptions> configureOptions)
+    {
+        // Use the configured options to register the Thing service
+        builder.Services.Configure(configureOptions);
+        
+        builder.Services.AddSingleton<ISaqc, Saqc>();
+        builder.Services.AddSingleton<IAzureStorageQueueSender, AzureStorageQueueSender>();
+        builder.Services.AddHostedService<SaqcHostedService>();
+
+        return builder;
+    }
+    
+    /// <summary>
+    /// Adds the base services required for the Simple Azure Queue Consumer (SAQC) to the service collection. <br />
+    /// Saqc uses a background service to poll Azure Storage Queues for messages and dispatches them to registered handlers.<br />
+    /// 
+    ///This method will configure the SAQC options using the provided configuration section in the appsettings.json.
+    /// </summary>
+    /// <param name="builder">The WebApplicationBuilder to add the services to.</param>
+    public static WebApplicationBuilder AddSaqc(this WebApplicationBuilder builder)
+    {
+        // Use the configured options to register the Thing service
+        builder.Services.Configure<SaqcOptions>(builder.Configuration.GetSection(SaqcOptions.Saqc));
+        
+        builder.Services.AddSingleton<ISaqc, Saqc>();
+        builder.Services.AddSingleton<IAzureStorageQueueSender, AzureStorageQueueSender>();
+        builder.Services.AddHostedService<SaqcHostedService>();
+
+        return builder;
     }
     
     /// <summary>
