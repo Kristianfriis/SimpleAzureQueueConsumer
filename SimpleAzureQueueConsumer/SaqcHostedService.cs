@@ -65,16 +65,18 @@ internal class SaqcHostedService : BackgroundService
     private async Task HandleTimerAsync(QueueConfiguration queueConfiguration, CancellationToken stoppingToken)
     {
         var queueClient = await SaqcBase.GetOrCreateQueueClient(queueConfiguration.GetQueueName());
+
+        QueueMessage? message = null;
         
         try
         {
-            QueueMessage? message = await queueClient.ReceiveMessageAsync(TimeSpan.FromMinutes(5), stoppingToken);
+            message = await queueClient.ReceiveMessageAsync(queueConfiguration.GetVisibilityTimeout(), stoppingToken);
 
             if (message != null)
             {
                 if (message.DequeueCount > queueConfiguration.DequeueCount)
                 {
-                    await HandleError(queueConfiguration, message.MessageText, stoppingToken);
+                    await HandleError(queueConfiguration, message, stoppingToken);
                 }
                 else
                 {
@@ -107,7 +109,7 @@ internal class SaqcHostedService : BackgroundService
         catch (Exception ex)
         {
             Console.WriteLine(ex);
-            await HandleError(queueConfiguration, ex.Message, stoppingToken);
+            await HandleError(queueConfiguration, message, stoppingToken);
         }
     }
 
@@ -121,8 +123,14 @@ internal class SaqcHostedService : BackgroundService
         }
     }
 
-    private async Task HandleError(QueueConfiguration queueConfiguration, string messageBody, CancellationToken stoppingToken)
+    private async Task HandleError(QueueConfiguration queueConfiguration, QueueMessage? message, CancellationToken stoppingToken)
     {
+        if(message is null)
+            return;
+        
+        if (message.DequeueCount < queueConfiguration.DequeueCount)
+            return;
+            
         var errorQueueClient = await SaqcBase.GetOrCreateQueueClient(queueConfiguration.GetErrorQueueName());
         var errorQueueExist = await errorQueueClient.ExistsAsync(stoppingToken);
                         
@@ -131,7 +139,7 @@ internal class SaqcHostedService : BackgroundService
             await errorQueueClient.CreateAsync(cancellationToken: stoppingToken);
         }
                         
-        await errorQueueClient.SendMessageAsync(messageBody, stoppingToken);
+        await errorQueueClient.SendMessageAsync(message.MessageText, stoppingToken);
     }
     
     public override async Task StopAsync(CancellationToken cancellationToken)
