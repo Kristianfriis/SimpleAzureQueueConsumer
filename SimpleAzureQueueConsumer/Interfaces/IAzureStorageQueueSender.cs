@@ -1,4 +1,4 @@
-namespace SimpleAzureQueueConsumer;
+namespace SimpleAzureQueueConsumer.Interfaces;
 
 public interface IAzureStorageQueueSender
 {

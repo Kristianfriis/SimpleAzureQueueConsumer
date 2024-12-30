@@ -1,4 +1,5 @@
-using SimpleAzureQueueConsumer;
+using SimpleAzureQueueConsumer.Extensions;
+using SimpleAzureQueueConsumer.Interfaces;
 using WebApplication4;
 using WebApplication4.Consumers;
 
@@ -13,12 +14,22 @@ var connString =
     "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;";
 
 builder.AddSaqc(connString);
+
+// or use the following to configure the polling rate and queue name
+// builder.AddSaqc(options =>
+// {
+//     options.ConnectionString = connString;
+//     options.NumberOfWorkers = 5;
+//     options.LoggingEnabled = true;
+// });
+
 builder.AddSaqcHandler<UserCreatedMessageHandler>("user-created");
 
 builder.AddSaqcHandler<OrderCreatedMessageHandler>()
     .OnQueue("order-created")
     .WithVisibilityTimeout(new TimeSpan(0,0,0,1))
     .WithPollingInterval(1000)
+    .UseErrorQueue()
     .Register();
 
 // builder.AddSaqcHandler<OrderCreatedMessageHandler>("order-created");
