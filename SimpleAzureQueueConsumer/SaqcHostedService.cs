@@ -1,3 +1,4 @@
+using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -76,7 +77,8 @@ internal class SaqcHostedService : BackgroundService
             {
                 if (message.DequeueCount > queueConfiguration.DequeueCount)
                 {
-                    await HandleError(queueConfiguration, message, stoppingToken);
+                    Console.WriteLine("Message has been dequeued too many times. Sending to error queue.");
+                    await HandleError(queueConfiguration, message, queueClient, stoppingToken);
                 }
                 else
                 {
@@ -114,7 +116,7 @@ internal class SaqcHostedService : BackgroundService
                 if (message.DequeueCount < queueConfiguration.DequeueCount)
                     return;
                 
-                await HandleError(queueConfiguration, message, stoppingToken);
+                await HandleError(queueConfiguration, message, queueClient, stoppingToken);
             }
         }
     }
@@ -129,7 +131,7 @@ internal class SaqcHostedService : BackgroundService
         }
     }
 
-    private async Task HandleError(QueueConfiguration queueConfiguration, QueueMessage? message, CancellationToken stoppingToken)
+    private async Task HandleError(QueueConfiguration queueConfiguration, QueueMessage? message,  QueueClient? queueClient, CancellationToken stoppingToken)
     {
         if(message is null)
             return;
@@ -143,6 +145,10 @@ internal class SaqcHostedService : BackgroundService
         }
                         
         await errorQueueClient.SendMessageAsync(message.MessageText, stoppingToken);
+        
+        if(queueClient is not null)
+            //removing the original message from the queue
+            await queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt, stoppingToken);
     }
     
     public override async Task StopAsync(CancellationToken cancellationToken)
