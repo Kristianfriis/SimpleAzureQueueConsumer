@@ -1,4 +1,5 @@
 using SimpleAzureQueueConsumer;
+using SimpleAzureQueueConsumer.Interfaces;
 using WebApplication4;
 using WebApplication4.Consumers;
 

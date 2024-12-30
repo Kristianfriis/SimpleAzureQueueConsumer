@@ -1,8 +1,10 @@
+using SimpleAzureQueueConsumer.Interfaces;
+
 namespace SimpleAzureQueueConsumer;
 
-internal class QueueConfiguration
+internal class QueueConfiguration : IQueueConfiguration
 {
-    internal string? QueueName { get; set; }
+    public string? QueueName { get; set; }
 
     /// <summary>
     /// Setting the polling rate in milliseconds.<br />
@@ -10,7 +12,7 @@ internal class QueueConfiguration
     /// Default is 5000ms
     /// </summary>
     /// <param name="pollingRateMs"></param>
-    internal int PollingRateMs { get; set; }
+    public int PollingRateMs { get; set; }
 
     /// <summary>
     /// Setting the visibility timeout for a message when dequeued in milliseconds.<br />
@@ -18,7 +20,7 @@ internal class QueueConfiguration
     /// Default is 5000ms
     /// </summary>
     /// <param name="visibilityTimeoutMs"></param>
-    internal int VisibilityTimeoutMs { get; set; } = 5000;
+    public int VisibilityTimeoutMs { get; set; } = 5000;
 
     /// <summary>
     /// Setting the dequeue count, before sending message to error queue<br />
@@ -32,15 +34,16 @@ internal class QueueConfiguration
     /// If the error queue does not exist, it will be created. <br />
     /// </summary>
     /// <param name="errorQueueName">String setting the error queue name to append to queue-name. Default is "error"</param>
-    internal string ErrorQueueName { get; set; } = "error";
-    internal bool UseErrorQueue { get; set; }
-    
-    internal string GetQueueName()
+    public string ErrorQueueName { get; set; } = "error";
+
+    public bool UseErrorQueue { get; set; }
+
+    public string GetQueueName()
     {
         return QueueName ?? throw new InvalidOperationException("Queue name not set");
     }
-    
-    internal string GetErrorQueueName()
+
+    public string GetErrorQueueName()
     {
         if(QueueName is null)
         {
@@ -49,8 +52,8 @@ internal class QueueConfiguration
         
         return $"{QueueName}-{ErrorQueueName}";
     }
-    
-    internal TimeSpan GetVisibilityTimeout()
+
+    public TimeSpan GetVisibilityTimeout()
     {
         return TimeSpan.FromMilliseconds(VisibilityTimeoutMs);
     }

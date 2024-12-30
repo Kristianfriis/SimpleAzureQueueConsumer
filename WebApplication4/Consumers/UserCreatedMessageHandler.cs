@@ -1,5 +1,6 @@
 using System.Text.Json;
 using SimpleAzureQueueConsumer;
+using SimpleAzureQueueConsumer.Interfaces;
 
 namespace WebApplication4.Consumers;
 

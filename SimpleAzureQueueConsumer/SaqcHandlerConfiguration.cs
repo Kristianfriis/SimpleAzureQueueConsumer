@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using SimpleAzureQueueConsumer.Interfaces;
 
 namespace SimpleAzureQueueConsumer;
 
@@ -137,6 +138,6 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
         }
         
         _builder.Services.AddKeyedScoped<IQueueMessageHandler, THandler>(_queueConfiguration.QueueName);
-        SaqcBase.AddQueueConfig(_queueConfiguration);
+        _builder.Services.AddSingleton<IQueueConfiguration>(_queueConfiguration);
     }
 }
