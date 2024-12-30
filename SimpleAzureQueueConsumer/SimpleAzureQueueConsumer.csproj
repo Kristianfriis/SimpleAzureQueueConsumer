@@ -5,11 +5,11 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PackageId>SimpleAzureQueueConsumer</PackageId>
-        <Version>0.3.0</Version>
+        <Version>0.3.1</Version>
         <Authors>Kristian Friis</Authors>
         <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
         <Title>SimpleAzureQueueConsumer</Title>
-        <PackageVersion>0.3.0</PackageVersion>
+        <PackageVersion>0.3.1</PackageVersion>
         <PackageProjectUrl>https://github.com/Kristianfriis/SimpleAzureQueueConsumer/</PackageProjectUrl>
         <RepositoryUrl>https://github.com/Kristianfriis/SimpleAzureQueueConsumer</RepositoryUrl>
         <PackageReadmeFile>Readme.md</PackageReadmeFile>
