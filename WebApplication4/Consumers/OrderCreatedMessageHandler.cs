@@ -22,6 +22,7 @@ public class OrderCreatedMessageHandler : IQueueMessageHandler
     public async Task HandleMessageAsync(StorageQueueMessage message)
     {
         // Process the order created message
+        throw new Exception("An error occurred while processing the order created message");
         Console.WriteLine($"Order created: {message}");
         // ... your order processing logic ...
     }

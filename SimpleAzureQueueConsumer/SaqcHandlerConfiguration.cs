@@ -58,11 +58,45 @@ public class SaqcHandlerConfiguration<THandler> where THandler : class, IQueueMe
     }
     
     /// <summary>
+    /// Sets the visibility timeout for a dequeued message.
+    /// </summary>
+    /// <param name="visibilityTimeoutMs">The visibility timeout in milliseconds.</param>
+    /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
+    public SaqcHandlerConfiguration<THandler> WithVisibilityTimeout(int visibilityTimeoutMs)
+    {
+        if(_queueConfiguration is null)
+        {
+            throw new InvalidOperationException("Queue name not set. Call OnQueue() first.");
+        }
+        
+        _queueConfiguration.VisibilityTimeoutMs = visibilityTimeoutMs;
+
+        return this;
+    }
+    
+    /// <summary>
     /// Sets the polling rate for the queue.
     /// </summary>
     /// <param name="timeSpan">The polling rate in a TimeSpan.</param>
     /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
     public SaqcHandlerConfiguration<THandler> WithPollingInterval(TimeSpan timeSpan)
+    {
+        if(_queueConfiguration is null)
+        {
+            throw new InvalidOperationException("Queue name not set. Call OnQueue() first.");
+        }
+        
+        _queueConfiguration.PollingRateMs = (int)timeSpan.TotalMilliseconds;
+
+        return this;
+    }
+    
+    /// <summary>
+    /// Sets the visibility timeout for a dequeued message.
+    /// </summary>
+    /// <param name="timeSpan">The visibility timeout in a TimeSpan.</param>
+    /// <returns>The current instance of <see cref="SaqcHandlerConfiguration{THandler}"/>.</returns>
+    public SaqcHandlerConfiguration<THandler> WithVisibilityTimeout(TimeSpan timeSpan)
     {
         if(_queueConfiguration is null)
         {

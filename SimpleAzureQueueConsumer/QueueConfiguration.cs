@@ -13,6 +13,14 @@ internal class QueueConfiguration
     internal int PollingRateMs { get; set; }
 
     /// <summary>
+    /// Setting the visibility timeout for a message when dequeued in milliseconds.<br />
+    ///
+    /// Default is 5000ms
+    /// </summary>
+    /// <param name="visibilityTimeoutMs"></param>
+    internal int VisibilityTimeoutMs { get; set; } = 5000;
+
+    /// <summary>
     /// Setting the dequeue count, before sending message to error queue<br />
     /// Default is 5
     /// </summary>
@@ -40,5 +48,10 @@ internal class QueueConfiguration
         }
         
         return $"{QueueName}-{ErrorQueueName}";
+    }
+    
+    internal TimeSpan GetVisibilityTimeout()
+    {
+        return TimeSpan.FromMilliseconds(VisibilityTimeoutMs);
     }
 }

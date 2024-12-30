@@ -17,6 +17,7 @@ builder.AddSaqcHandler<UserCreatedMessageHandler>("user-created");
 
 builder.AddSaqcHandler<OrderCreatedMessageHandler>()
     .OnQueue("order-created")
+    .WithVisibilityTimeout(new TimeSpan(0,0,0,1))
     .WithPollingInterval(1000)
     .Register();
 
