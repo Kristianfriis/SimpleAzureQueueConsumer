@@ -2,18 +2,21 @@ using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SimpleAzureQueueConsumer.Interfaces;
 
 namespace SimpleAzureQueueConsumer;
 
 internal class SaqcHostedService : BackgroundService
 {
+    private readonly ISaqc _saqc;
     private readonly IServiceProvider _serviceProvider;
     private readonly List<Task> _listenerTasks = new();
     private readonly SemaphoreSlim _semaphore;
 
-    public SaqcHostedService(IServiceProvider serviceProvider)
+    public SaqcHostedService(IServiceProvider serviceProvider, ISaqc saqc)
     {
         _serviceProvider = serviceProvider;
+        _saqc = saqc;
         _semaphore = new SemaphoreSlim(10);
     }
 
@@ -21,7 +24,7 @@ internal class SaqcHostedService : BackgroundService
     {
         Console.WriteLine("Starting the Azure Queue Consumer Hosted Service");
         await StartQueueClients();
-        foreach (var queueConfiguration in SaqcBase.GetQueueConfigurations())
+        foreach (var queueConfiguration in _saqc.GetQueueConfigurations())
         {
             _listenerTasks.Add(Task.Run(() => QueueTimer(queueConfiguration, stoppingToken), stoppingToken));
         }
@@ -29,7 +32,7 @@ internal class SaqcHostedService : BackgroundService
         await Task.WhenAll(_listenerTasks);
     }
 
-    private async Task QueueTimer(QueueConfiguration queueConfiguration, CancellationToken stoppingToken)
+    private async Task QueueTimer(IQueueConfiguration queueConfiguration, CancellationToken stoppingToken)
     {
         using PeriodicTimer timer = new(TimeSpan.FromMilliseconds(queueConfiguration.PollingRateMs));
 
@@ -63,9 +66,9 @@ internal class SaqcHostedService : BackgroundService
         }
     }
 
-    private async Task HandleTimerAsync(QueueConfiguration queueConfiguration, CancellationToken stoppingToken)
+    private async Task HandleTimerAsync(IQueueConfiguration queueConfiguration, CancellationToken stoppingToken)
     {
-        var queueClient = await SaqcBase.GetOrCreateQueueClient(queueConfiguration.GetQueueName());
+        var queueClient = await _saqc.GetOrCreateQueueClient(queueConfiguration.GetQueueName());
 
         QueueMessage? message = null;
         
@@ -123,20 +126,20 @@ internal class SaqcHostedService : BackgroundService
 
     private async Task StartQueueClients()
     {
-        Console.WriteLine($"Creating queue clients for {SaqcBase.GetQueueConfigurations().Count()} queues");
-        foreach (var queueConfiguration in SaqcBase.GetQueueConfigurations())
+        Console.WriteLine($"Creating queue clients for {_saqc.GetQueueConfigurations().Count()} queues");
+        foreach (var queueConfiguration in _saqc.GetQueueConfigurations())
         {
-            await SaqcBase.GetOrCreateQueueClient(queueConfiguration.GetQueueName());
+            await _saqc.GetOrCreateQueueClient(queueConfiguration.GetQueueName());
             Console.WriteLine($"Queue client created for queue: {queueConfiguration.QueueName}");
         }
     }
 
-    private async Task HandleError(QueueConfiguration queueConfiguration, QueueMessage? message,  QueueClient? queueClient, CancellationToken stoppingToken)
+    private async Task HandleError(IQueueConfiguration queueConfiguration, QueueMessage? message,  QueueClient? queueClient, CancellationToken stoppingToken)
     {
         if(message is null)
             return;
             
-        var errorQueueClient = await SaqcBase.GetOrCreateQueueClient(queueConfiguration.GetErrorQueueName());
+        var errorQueueClient = await _saqc.GetOrCreateQueueClient(queueConfiguration.GetErrorQueueName());
         var errorQueueExist = await errorQueueClient.ExistsAsync(stoppingToken);
                         
         if (!errorQueueExist)
