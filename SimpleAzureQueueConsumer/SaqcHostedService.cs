@@ -2,6 +2,8 @@ using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using SimpleAzureQueueConsumer.Helpers;
 using SimpleAzureQueueConsumer.Interfaces;
 using SimpleAzureQueueConsumer.Models;
 
@@ -13,17 +15,19 @@ internal class SaqcHostedService : BackgroundService
     private readonly IServiceProvider _serviceProvider;
     private readonly List<Task> _listenerTasks = new();
     private readonly SemaphoreSlim _semaphore;
+    private readonly SaqcOptions _options;
 
-    public SaqcHostedService(IServiceProvider serviceProvider, ISaqc saqc)
+    public SaqcHostedService(IServiceProvider serviceProvider, ISaqc saqc, IOptions<SaqcOptions> options)
     {
         _serviceProvider = serviceProvider;
         _saqc = saqc;
-        _semaphore = new SemaphoreSlim(10);
+        _semaphore = new SemaphoreSlim(options.Value.NumberOfWorkers);
+        _options = options.Value;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        Console.WriteLine("Starting the Azure Queue Consumer Hosted Service");
+        LoggerHelper.LogInfo("Starting the Azure Queue Consumer Hosted Service", _serviceProvider, _options.LoggingEnabled);
         await StartQueueClients();
         foreach (var queueConfiguration in _saqc.GetQueueConfigurations())
         {
@@ -81,7 +85,7 @@ internal class SaqcHostedService : BackgroundService
             {
                 if (message.DequeueCount > queueConfiguration.DequeueCount)
                 {
-                    Console.WriteLine("Message has been dequeued too many times. Sending to error queue.");
+                    LoggerHelper.LogWarning("Message has been dequeued too many times. Sending to error queue.", _serviceProvider, _options.LoggingEnabled);
                     await HandleError(queueConfiguration, message, queueClient, stoppingToken);
                 }
                 else
@@ -114,7 +118,8 @@ internal class SaqcHostedService : BackgroundService
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            var logMessage = "HandleTimerAsync: An error occurred during timer.";
+            LoggerHelper.LogError(ex, logMessage, _serviceProvider, _options.LoggingEnabled);
             if (message is not null)
             {
                 if (message.DequeueCount < queueConfiguration.DequeueCount)
@@ -127,11 +132,11 @@ internal class SaqcHostedService : BackgroundService
 
     private async Task StartQueueClients()
     {
-        Console.WriteLine($"Creating queue clients for {_saqc.GetQueueConfigurations().Count()} queues");
+        LoggerHelper.LogInfo($"Creating queue clients for {_saqc.GetQueueConfigurations().Count()} queues", _serviceProvider, _options.LoggingEnabled);
         foreach (var queueConfiguration in _saqc.GetQueueConfigurations())
         {
             await _saqc.GetOrCreateQueueClient(queueConfiguration.GetQueueName());
-            Console.WriteLine($"Queue client created for queue: {queueConfiguration.QueueName}");
+            LoggerHelper.LogInfo($"Queue client created for queue: {queueConfiguration.QueueName}", _serviceProvider, _options.LoggingEnabled);
         }
     }
 
@@ -159,17 +164,20 @@ internal class SaqcHostedService : BackgroundService
     {
         try
         {
-            Console.WriteLine("SaqcHostedService stopping gracefully.");
+            LoggerHelper.LogError( "SaqcHostedService stopping gracefully.", _serviceProvider, _options.LoggingEnabled);
             await base.StopAsync(cancellationToken); 
         }
         catch (OperationCanceledException)
         {
+            var logMessage = "SaqcHostedService: OperationCanceledException during StopAsync.";
             // Suppress the cancellation exception as it's expected during shutdown
-            Console.WriteLine("SaqcHostedService: OperationCanceledException during StopAsync.");
+            LoggerHelper.LogError(logMessage, _serviceProvider, _options.LoggingEnabled);
+            
         }
         catch (Exception ex)
         {
-            Console.WriteLine("SaqcHostedService: An error occurred during shutdown.");
+            var logMessage = "SaqcHostedService: An error occurred during shutdown.";
+            LoggerHelper.LogError(ex, logMessage, _serviceProvider, _options.LoggingEnabled);
         }
     }
 }
