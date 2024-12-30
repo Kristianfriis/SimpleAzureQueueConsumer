@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using SimpleAzureQueueConsumer.Interfaces;
+using SimpleAzureQueueConsumer.Models;
 
-namespace SimpleAzureQueueConsumer;
+namespace SimpleAzureQueueConsumer.Extensions;
 
 public static class ServiceCollectionExtensions
 {

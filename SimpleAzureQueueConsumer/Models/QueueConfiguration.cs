@@ -1,6 +1,6 @@
 using SimpleAzureQueueConsumer.Interfaces;
 
-namespace SimpleAzureQueueConsumer;
+namespace SimpleAzureQueueConsumer.Models;
 
 internal class QueueConfiguration : IQueueConfiguration
 {

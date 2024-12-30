@@ -3,6 +3,7 @@ using Azure.Storage.Queues.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SimpleAzureQueueConsumer.Interfaces;
+using SimpleAzureQueueConsumer.Models;
 
 namespace SimpleAzureQueueConsumer;
 

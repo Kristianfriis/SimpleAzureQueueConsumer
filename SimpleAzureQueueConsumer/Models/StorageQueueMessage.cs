@@ -1,6 +1,6 @@
 using Azure.Storage.Queues.Models;
 
-namespace SimpleAzureQueueConsumer;
+namespace SimpleAzureQueueConsumer.Models;
 
 public class StorageQueueMessage
 {

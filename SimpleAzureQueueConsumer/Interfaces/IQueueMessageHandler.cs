@@ -1,3 +1,5 @@
+using SimpleAzureQueueConsumer.Models;
+
 namespace SimpleAzureQueueConsumer.Interfaces;
 
 public interface IQueueMessageHandler
